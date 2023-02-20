@@ -1,5 +1,8 @@
-use std::net::{TcpListener, TcpStream};
+use std::fs;
 use std::io::{prelude::*, BufReader};
+use std::net::{TcpListener, TcpStream};
+
+const FALLBACK_CONTENT: &str = "<!DOCTYPE html>\n<html lang='en'>\n<head>\n<meta charset='utf-8'>\n<title>Hello!</title>\n</head>\n<body>\n<h1>Hello!</h1>\n<p>Hi from Rust</p>\n</body>\n</html>";
 
 fn main() {
     let listener =
@@ -16,11 +19,20 @@ fn main() {
 
 fn handle_connection(mut stream: TcpStream) {
     let but_reader = BufReader::new(&stream);
-    let http_request: Vec<_> = but_reader
+    let req: Vec<_> = but_reader
         .lines()
         .map(|line| line.unwrap())
         .take_while(|line| !line.is_empty())
         .collect();
 
-    println!("Request: {:#?}", http_request);
+
+    let status = "HTTP/1.1 200 OK";
+    let content = fs::read_to_string("hello.html").unwrap_or_else(|_| String::from(FALLBACK_CONTENT));
+    let content_length = format!("Content-Length: {}", content.len());
+
+    let res = format!("{status}\r\n{content_length}\r\n\r\n{content}");
+
+    // println!("Request: {:#?}", http_request);
+
+    stream.write(res.as_bytes()).unwrap();
 }
