@@ -1,6 +1,8 @@
 use std::fs;
 use std::io::{prelude::*, BufReader};
 use std::net::{TcpListener, TcpStream};
+use std::thread;
+use std::time::Duration;
 
 const INDEX_FALLBACK: &str = "\
 <!DOCTYPE html>\
@@ -36,8 +38,10 @@ fn main() {
 
     for stream in listener.incoming() {
         let stream = stream.unwrap();
-        handle_connection(stream);
-
+        thread::spawn(|| {
+            println!("Connection established! spawning thread...");
+            handle_connection(stream);
+        });
     }
 }
 
@@ -45,18 +49,25 @@ fn handle_connection(mut stream: TcpStream) {
     let but_reader = BufReader::new(&stream);
     let request_line = but_reader.lines().next().unwrap().unwrap();
     let (status, file, fallback) =
-        if request_line == "GET / HTTP/1.1" {
-            (
+        match request_line.as_str() {
+            "GET / HTTP/1.1" => (
                 "HTTP/1.1 200 OK",
                 "index.html",
                 INDEX_FALLBACK,
-            )
-        } else {
-            (
+            ),
+            "GET /sleep HTTP/1.1" => {
+                thread::sleep(Duration::from_secs(5));
+                (
+                    "HTTP/1.1 200 OK",
+                    "index.html",
+                    INDEX_FALLBACK,
+                )
+            },
+            _ => (
                 "HTTP/1.1 400 NOT FOUND",
                 "404.html",
                 ERROR_404_FALLBACK,
-            )
+            ),
         };
     let content = fs::read_to_string(file).unwrap_or(String::from(fallback));
     let header_content_length = format!("Content-Length: {}", content.len());
