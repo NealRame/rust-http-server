@@ -37,12 +37,12 @@ fn handle_connection(mut stream: TcpStream) {
         .collect();
 
     let status = "HTTP/1.1 200 OK";
-    let content = fs::read_to_string("hello.html").unwrap_or_else(|_| String::from(FALLBACK_CONTENT));
-    let content_length = format!("Content-Length: {}", content.len());
+    let content = fs::read_to_string("hello.html").unwrap_or(String::from(FALLBACK_CONTENT));
+    let header_content_length = format!("Content-Length: {}", content.len());
 
-    let res = format!("{status}\r\n{content_length}\r\n\r\n{content}");
+    let res = format!("{status}\r\n{header_content_length}\r\n\r\n{content}");
 
     // println!("Request: {:#?}", http_request);
 
-    stream.write(res.as_bytes()).unwrap();
+    stream.write_all(res.as_bytes()).unwrap();
 }
