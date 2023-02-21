@@ -2,7 +2,18 @@ use std::fs;
 use std::io::{prelude::*, BufReader};
 use std::net::{TcpListener, TcpStream};
 
-const FALLBACK_CONTENT: &str = "<!DOCTYPE html>\n<html lang='en'>\n<head>\n<meta charset='utf-8'>\n<title>Hello!</title>\n</head>\n<body>\n<h1>Hello!</h1>\n<p>Hi from Rust</p>\n</body>\n</html>";
+const FALLBACK_CONTENT: &str = "\
+<!DOCTYPE html>\
+<html lang='en'>\
+    <head>\
+        <meta charset='utf-8'>\
+        <title>Hello!</title>\
+    </head>\
+    <body>\
+        <h1>Hello!</h1>\
+        <p>Hi from Rust</p>\
+    </body>\
+</html>";
 
 fn main() {
     let listener =
@@ -24,7 +35,6 @@ fn handle_connection(mut stream: TcpStream) {
         .map(|line| line.unwrap())
         .take_while(|line| !line.is_empty())
         .collect();
-
 
     let status = "HTTP/1.1 200 OK";
     let content = fs::read_to_string("hello.html").unwrap_or_else(|_| String::from(FALLBACK_CONTENT));
