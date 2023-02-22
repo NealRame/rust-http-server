@@ -4,6 +4,8 @@ use std::net::{TcpListener, TcpStream};
 use std::thread;
 use std::time::Duration;
 
+use hello_http_server::ThreadPool;
+
 const INDEX_FALLBACK: &str = "\
 <!DOCTYPE html>\
 <html lang='en'>\
@@ -31,18 +33,21 @@ const ERROR_404_FALLBACK: &str = "\
 </html>";
 
 fn main() {
-    let listener =
-        TcpListener::bind("127.0.0.1:7878").unwrap();
+    let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
+    let pool = ThreadPool::new(4);
 
     println!("Listening on port http://127.0.0.1:7878 ...");
 
     for stream in listener.incoming() {
         let stream = stream.unwrap();
-        thread::spawn(|| {
+
+        pool.execute(|| {
             println!("Connection established! spawning thread...");
             handle_connection(stream);
         });
     }
+
+    println!("Shutting down.");
 }
 
 fn handle_connection(mut stream: TcpStream) {
